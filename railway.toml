@@ -5,7 +5,3 @@ builder = "nixpacks"
 startCommand = "python app.py"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-
-[environments.production.variables]
-SECRET_KEY = "flask-prod-secret-2024"
-FLASK_DEBUG = "false"

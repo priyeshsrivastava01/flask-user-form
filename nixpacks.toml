@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['python311', 'unixODBC']
+nixPkgs = ['python311']
 
 [phases.install]
 cmds = [
@@ -10,4 +10,4 @@ cmds = [
 cmds = ['echo "No build phase"']
 
 [start]
-cmd = 'gunicorn --bind 0.0.0.0:$PORT app:app'
+cmd = 'python app.py'
