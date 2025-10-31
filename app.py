@@ -32,6 +32,15 @@ def get_db_connection():
 def index():
     return render_template('index.html')
 
+@app.route('/admin')
+def admin():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
+    users = cursor.fetchall()
+    conn.close()
+    return render_template('admin.html', users=users)
+
 @app.route('/submit', methods=['POST'])
 def submit_form():
     conn = None
