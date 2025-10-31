@@ -1,13 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
+app.secret_key = 'flask-secret-key-2024'
 
 # Database file
 DB_FILE = 'users.db'
@@ -30,10 +26,7 @@ def init_db():
     conn.close()
 
 def get_db_connection():
-    try:
-        return sqlite3.connect(DB_FILE)
-    except Exception as e:
-        raise Exception(f"Database connection failed: {str(e)}")
+    return sqlite3.connect(DB_FILE)
 
 @app.route('/')
 def index():
