@@ -16,13 +16,29 @@ if os.getenv('DATABASE_URL'):
     
     def get_db_connection():
         url = urlparse(os.getenv('DATABASE_URL'))
-        return psycopg2.connect(
+        conn = psycopg2.connect(
             database=url.path[1:],
             user=url.username,
             password=url.password,
             host=url.hostname,
             port=url.port
         )
+        # Create table if not exists
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Users (
+                ID SERIAL PRIMARY KEY,
+                Name VARCHAR(100) NOT NULL,
+                Email VARCHAR(100) NOT NULL,
+                Phone VARCHAR(20) NOT NULL,
+                Designation VARCHAR(100) NOT NULL,
+                Company VARCHAR(100) NOT NULL,
+                CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        cursor.close()
+        return conn
 else:
     # Use SQL Server for local development
     import pyodbc
@@ -50,12 +66,7 @@ def index():
 def admin():
     conn = get_db_connection()
     cursor = conn.cursor()
-    if os.getenv('DATABASE_URL'):
-        # PostgreSQL syntax
-        cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
-    else:
-        # SQL Server syntax
-        cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
+    cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
     users = cursor.fetchall()
     conn.close()
     return render_template('admin.html', users=users)
@@ -73,10 +84,18 @@ def submit_form():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("""
-            INSERT INTO Users (Name, Email, Phone, Designation, Company)
-            VALUES (?, ?, ?, ?, ?)
-        """, (name, email, phone, designation, company))
+        if os.getenv('DATABASE_URL'):
+            # PostgreSQL syntax
+            cursor.execute("""
+                INSERT INTO Users (Name, Email, Phone, Designation, Company)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (name, email, phone, designation, company))
+        else:
+            # SQL Server syntax
+            cursor.execute("""
+                INSERT INTO Users (Name, Email, Phone, Designation, Company)
+                VALUES (?, ?, ?, ?, ?)
+            """, (name, email, phone, designation, company))
         
         conn.commit()
         flash('Form submitted successfully!', 'success')
