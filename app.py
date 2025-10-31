@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-import pyodbc
+import sqlite3
 import os
 from dotenv import load_dotenv
 
@@ -9,20 +9,30 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
-# Database configuration
-DB_CONFIG = {
-    'server': os.getenv('DB_SERVER', 'localhost'),
-    'database': os.getenv('DB_NAME', 'UserDB'),
-    'username': os.getenv('DB_USERNAME', 'sa'),
-    'password': os.getenv('DB_PASSWORD', 'your-password'),
-    'driver': '{ODBC Driver 17 for SQL Server}'
-}
+# Database file
+DB_FILE = 'users.db'
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS Users (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            Name TEXT NOT NULL,
+            Email TEXT NOT NULL,
+            Phone TEXT NOT NULL,
+            Designation TEXT NOT NULL,
+            Company TEXT NOT NULL,
+            CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 def get_db_connection():
     try:
-        conn_str = f"DRIVER={DB_CONFIG['driver']};SERVER={DB_CONFIG['server']};DATABASE={DB_CONFIG['database']};UID={DB_CONFIG['username']};PWD={DB_CONFIG['password']}"
-        return pyodbc.connect(conn_str)
-    except pyodbc.Error as e:
+        return sqlite3.connect(DB_FILE)
+    except Exception as e:
         raise Exception(f"Database connection failed: {str(e)}")
 
 @app.route('/')
@@ -59,5 +69,6 @@ def submit_form():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
+    init_db()
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')

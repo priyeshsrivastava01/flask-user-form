@@ -7,8 +7,5 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 [environments.production.variables]
-DB_SERVER = "106.219.153.104"
-DB_NAME = "Practice DB"
-DB_USERNAME = "sa"
 SECRET_KEY = "flask-prod-secret-2024"
 FLASK_DEBUG = "false"
