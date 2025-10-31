@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-import pyodbc
 import os
 from dotenv import load_dotenv
 
@@ -9,21 +8,39 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'flask-secret-key-2024')
 
-# Database configuration
-DB_CONFIG = {
-    'server': os.getenv('DB_SERVER', '106.219.153.104'),
-    'database': os.getenv('DB_NAME', 'Practice DB'),
-    'username': os.getenv('DB_USERNAME', 'sa'),
-    'password': os.getenv('DB_PASSWORD', 'Sanju@123456'),
-    'driver': '{ODBC Driver 17 for SQL Server}'
-}
-
-def get_db_connection():
-    try:
-        conn_str = f"DRIVER={DB_CONFIG['driver']};SERVER={DB_CONFIG['server']};DATABASE={DB_CONFIG['database']};UID={DB_CONFIG['username']};PWD={DB_CONFIG['password']}"
-        return pyodbc.connect(conn_str)
-    except pyodbc.Error as e:
-        raise Exception(f"Database connection failed: {str(e)}")
+# Check if running on Railway (has DATABASE_URL)
+if os.getenv('DATABASE_URL'):
+    # Use PostgreSQL for Railway
+    import psycopg2
+    from urllib.parse import urlparse
+    
+    def get_db_connection():
+        url = urlparse(os.getenv('DATABASE_URL'))
+        return psycopg2.connect(
+            database=url.path[1:],
+            user=url.username,
+            password=url.password,
+            host=url.hostname,
+            port=url.port
+        )
+else:
+    # Use SQL Server for local development
+    import pyodbc
+    
+    DB_CONFIG = {
+        'server': os.getenv('DB_SERVER', 'localhost\\SQLEXPRESS'),
+        'database': os.getenv('DB_NAME', 'Practice DB'),
+        'username': os.getenv('DB_USERNAME', 'sa'),
+        'password': os.getenv('DB_PASSWORD', 'Sanju@123456'),
+        'driver': '{ODBC Driver 17 for SQL Server}'
+    }
+    
+    def get_db_connection():
+        try:
+            conn_str = f"DRIVER={DB_CONFIG['driver']};SERVER={DB_CONFIG['server']};DATABASE={DB_CONFIG['database']};UID={DB_CONFIG['username']};PWD={DB_CONFIG['password']}"
+            return pyodbc.connect(conn_str)
+        except pyodbc.Error as e:
+            raise Exception(f"Database connection failed: {str(e)}")
 
 @app.route('/')
 def index():
@@ -33,7 +50,12 @@ def index():
 def admin():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
+    if os.getenv('DATABASE_URL'):
+        # PostgreSQL syntax
+        cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
+    else:
+        # SQL Server syntax
+        cursor.execute('SELECT * FROM Users ORDER BY CreatedAt DESC')
     users = cursor.fetchall()
     conn.close()
     return render_template('admin.html', users=users)
