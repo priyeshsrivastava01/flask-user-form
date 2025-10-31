@@ -11,15 +11,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Use Node 18
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        
-    - name: Install Railway CLI
-      run: npm install -g @railway/cli
-      
     - name: Deploy to Railway
-      run: railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
-      env:
-        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      uses: railwayapp/railway-deploy@v1
+      with:
+        railway_token: ${{ secrets.RAILWAY_TOKEN }}
+        service: ${{ secrets.RAILWAY_SERVICE_ID }}
